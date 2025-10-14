@@ -14,6 +14,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
         .track {
             background-color: #2a2a2a;
@@ -41,6 +44,7 @@
         }
         input[type="file"] {
             margin: 10px 0;
+            color: #ffffff;
         }
         .progress {
             width: 100%;
@@ -54,7 +58,7 @@
     <button id="playAll">Play All</button>
     <div class="track">
         <h2>Track 1</h2>
-        <input type="file" id="track1" accept="audio/*">
+        <input type="file" id="track1" accept="audio/mp3,audio/wav,audio/mpeg">
         <label>Pan: <input type="range" id="pan1" min="-1" max="1" step="0.1" value="0"></label>
         <label>Gain: <input type="range" id="gain1" min="0" max="2" step="0.1" value="1"></label>
         <label><input type="checkbox" id="loop1" checked> Loop</label>
@@ -76,12 +80,27 @@
         const loopCheckbox = document.getElementById('loop1');
         const progressBar = document.getElementById('progress1');
 
+        // Разблокировка AudioContext на iOS
+        function unlockAudioContext() {
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(() => console.log('AudioContext resumed'));
+            }
+        }
+        document.addEventListener('touchstart', unlockAudioContext);
+        document.addEventListener('click', unlockAudioContext);
+
         trackInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (file) {
+            if (!file) {
+                console.log('No file selected');
+                return;
+            }
+            try {
                 const arrayBuffer = await file.arrayBuffer();
                 track1 = await ctx.decodeAudioData(arrayBuffer);
                 console.log(`Loaded ${file.name}: ${track1.duration} s, ${track1.sampleRate} Hz, ${track1.numberOfChannels} channels`);
+            } catch (e) {
+                console.error(`Error loading audio: ${e.message}`);
             }
         });
 
