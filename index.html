@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ App</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .track {
+            background-color: #2a2a2a;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 600px;
+        }
+        button {
+            background-color: #ff4d4d;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #e63939;
+        }
+        input[type="range"] {
+            width: 100px;
+            margin: 0 10px;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .progress {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DJ App</h1>
+    <button id="playAll">Play All</button>
+    <div class="track">
+        <h2>Track 1</h2>
+        <input type="file" id="track1" accept="audio/*">
+        <label>Pan: <input type="range" id="pan1" min="-1" max="1" step="0.1" value="0"></label>
+        <label>Gain: <input type="range" id="gain1" min="0" max="2" step="0.1" value="1"></label>
+        <label><input type="checkbox" id="loop1" checked> Loop</label>
+        <input type="range" id="progress1" min="0" max="100" value="0" class="progress" disabled>
+    </div>
+    <script>
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let track1 = null;
+        let source = null;
+        let panNode = null;
+        let gainNode = null;
+        let playing = false;
+        let startTime = 0;
+
+        const playAllBtn = document.getElementById('playAll');
+        const trackInput = document.getElementById('track1');
+        const panSlider = document.getElementById('pan1');
+        const gainSlider = document.getElementById('gain1');
+        const loopCheckbox = document.getElementById('loop1');
+        const progressBar = document.getElementById('progress1');
+
+        trackInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const arrayBuffer = await file.arrayBuffer();
+                track1 = await ctx.decodeAudioData(arrayBuffer);
+                console.log(`Loaded ${file.name}: ${track1.duration} s, ${track1.sampleRate} Hz, ${track1.numberOfChannels} channels`);
+            }
+        });
+
+        panSlider.addEventListener('input', () => {
+            if (panNode) {
+                panNode.pan.value = parseFloat(panSlider.value);
+                console.log(`Track 1 pan set to ${panSlider.value}`);
+            }
+        });
+
+        gainSlider.addEventListener('input', () => {
+            if (gainNode) {
+                gainNode.gain.value = parseFloat(gainSlider.value);
+                console.log(`Track 1 gain set to ${gainSlider.value}`);
+            }
+        });
+
+        playAllBtn.addEventListener('click', () => {
+            if (!track1) {
+                console.log("No track loaded");
+                return;
+            }
+            if (playing) {
+                source.stop();
+                playing = false;
+                playAllBtn.textContent = "Play All";
+                console.log("Stopped playback");
+            } else {
+                source = ctx.createBufferSource();
+                source.buffer = track1;
+                source.loop = loopCheckbox.checked;
+
+                panNode = ctx.createStereoPanner();
+                panNode.pan.value = parseFloat(panSlider.value);
+
+                gainNode = ctx.createGain();
+                gainNode.gain.value = parseFloat(gainSlider.value);
+
+                source.connect(panNode).connect(gainNode).connect(ctx.destination);
+                source.start();
+                playing = true;
+                startTime = ctx.currentTime;
+                playAllBtn.textContent = "Stop";
+                console.log("Started playback");
+                updateProgress();
+            }
+        });
+
+        function updateProgress() {
+            if (!playing || !track1) return;
+            const progress = ((ctx.currentTime - startTime) / track1.duration) * 100;
+            progressBar.value = progress;
+            if (progress >= 100 && !loopCheckbox.checked) {
+                playing = false;
+                playAllBtn.textContent = "Play All";
+                console.log("Playback finished");
+            } else {
+                requestAnimationFrame(updateProgress);
+            }
+        }
+    </script>
+</body>
+</html>
