@@ -90,11 +90,9 @@ const AudioPlayer = ({ track }) => {
         <div className={`audio-player ${isPlaying ? 'active' : ''}`}>
             <audio ref={audioRef} src={track.url} preload="metadata" />
             
-            <div className="player-controls">
-                <button className={`play-button ${isPlaying ? 'playing' : ''}`} onClick={togglePlay}>
-                    {isPlaying ? '⏸️' : '▶️'}
-                </button>
-                
+            <div className="player-<button className={`play-button ${isPlaying ? 'playing' : ''}`} onClick={togglePlay}>
+    {isPlaying ? '⏸️ СТОП' : '▶️ ИГРАТЬ'}  // ← измените текст
+</button>
                 <div className="progress-container">
                     <span className="time-current">{formatTime(currentTime)}</span>
                     <input
