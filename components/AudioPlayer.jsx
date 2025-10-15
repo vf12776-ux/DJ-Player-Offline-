@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-// Глобальная переменная для хранения текущего аудио
-let currentAudio = null;
-
 const AudioPlayer = ({ track }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -16,7 +13,10 @@ const AudioPlayer = ({ track }) => {
         const updateDuration = () => setDuration(audio.duration);
         const handleEnd = () => {
             setIsPlaying(false);
-            currentAudio = null;
+            // Удаляем из глобального списка при завершении
+            if (window.playingAudios) {
+                window.playingAudios = window.playingAudios.filter(a => a !== audio);
+            }
         };
 
         audio.addEventListener('timeupdate', updateTime);
@@ -30,50 +30,48 @@ const AudioPlayer = ({ track }) => {
         };
     }, []);
 
+    // Функция для остановки всех других аудио
+    const stopAllOtherAudios = () => {
+        if (!window.playingAudios) window.playingAudios = [];
+        
+        // Останавливаем все аудио кроме текущего
+        window.playingAudios.forEach(otherAudio => {
+            if (otherAudio !== audioRef.current) {
+                otherAudio.pause();
+                otherAudio.currentTime = 0;
+            }
+        });
+        
+        // Очищаем массив и добавляем текущее аудио
+        window.playingAudios = [audioRef.current];
+    };
+
     const togglePlay = () => {
         if (isPlaying) {
-            // Пауза текущего трека
+            // Пауза
             audioRef.current.pause();
             setIsPlaying(false);
-            if (currentAudio === audioRef.current) {
-                currentAudio = null;
+            if (window.playingAudios) {
+                window.playingAudios = window.playingAudios.filter(a => a !== audioRef.current);
             }
         } else {
-            // Останавливаем предыдущий трек
-            if (currentAudio && currentAudio !== audioRef.current) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-                
-                // Сбрасываем состояние у других плееров
-                const event = new CustomEvent('trackStopped');
-                window.dispatchEvent(event);
-            }
+            // Запуск - сначала останавливаем все другие
+            stopAllOtherAudios();
             
-            // Запускаем текущий трек
+            // Затем запускаем текущее
             audioRef.current.play()
                 .then(() => {
                     setIsPlaying(true);
-                    currentAudio = audioRef.current;
+                    if (!window.playingAudios) window.playingAudios = [];
+                    if (!window.playingAudios.includes(audioRef.current)) {
+                        window.playingAudios.push(audioRef.current);
+                    }
                 })
                 .catch(error => {
                     console.error('Error playing audio:', error);
                 });
         }
     };
-
-    // Слушаем событие остановки других треков
-    useEffect(() => {
-        const handleTrackStopped = () => {
-            if (!isPlaying) return;
-            setIsPlaying(false);
-        };
-
-        window.addEventListener('trackStopped', handleTrackStopped);
-        
-        return () => {
-            window.removeEventListener('trackStopped', handleTrackStopped);
-        };
-    }, [isPlaying]);
 
     const handleSeek = (e) => {
         const seekTime = parseFloat(e.target.value);
