@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+// Глобальная переменная для хранения текущего аудио
+let currentAudio = null;
+
 const AudioPlayer = ({ track }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -11,7 +14,10 @@ const AudioPlayer = ({ track }) => {
         
         const updateTime = () => setCurrentTime(audio.currentTime);
         const updateDuration = () => setDuration(audio.duration);
-        const handleEnd = () => setIsPlaying(false);
+        const handleEnd = () => {
+            setIsPlaying(false);
+            currentAudio = null;
+        };
 
         audio.addEventListener('timeupdate', updateTime);
         audio.addEventListener('loadedmetadata', updateDuration);
@@ -26,12 +32,48 @@ const AudioPlayer = ({ track }) => {
 
     const togglePlay = () => {
         if (isPlaying) {
+            // Пауза текущего трека
             audioRef.current.pause();
+            setIsPlaying(false);
+            if (currentAudio === audioRef.current) {
+                currentAudio = null;
+            }
         } else {
-            audioRef.current.play();
+            // Останавливаем предыдущий трек
+            if (currentAudio && currentAudio !== audioRef.current) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                
+                // Сбрасываем состояние у других плееров
+                const event = new CustomEvent('trackStopped');
+                window.dispatchEvent(event);
+            }
+            
+            // Запускаем текущий трек
+            audioRef.current.play()
+                .then(() => {
+                    setIsPlaying(true);
+                    currentAudio = audioRef.current;
+                })
+                .catch(error => {
+                    console.error('Error playing audio:', error);
+                });
         }
-        setIsPlaying(!isPlaying);
     };
+
+    // Слушаем событие остановки других треков
+    useEffect(() => {
+        const handleTrackStopped = () => {
+            if (!isPlaying) return;
+            setIsPlaying(false);
+        };
+
+        window.addEventListener('trackStopped', handleTrackStopped);
+        
+        return () => {
+            window.removeEventListener('trackStopped', handleTrackStopped);
+        };
+    }, [isPlaying]);
 
     const handleSeek = (e) => {
         const seekTime = parseFloat(e.target.value);
@@ -47,11 +89,11 @@ const AudioPlayer = ({ track }) => {
     };
 
     return (
-        <div className="audio-player">
+        <div className={`audio-player ${isPlaying ? 'active' : ''}`}>
             <audio ref={audioRef} src={track.url} preload="metadata" />
             
             <div className="player-controls">
-                <button className="play-button" onClick={togglePlay}>
+                <button className={`play-button ${isPlaying ? 'playing' : ''}`} onClick={togglePlay}>
                     {isPlaying ? '⏸️' : '▶️'}
                 </button>
                 
@@ -71,6 +113,7 @@ const AudioPlayer = ({ track }) => {
                 <div className="track-info">
                     <strong>{track.name}</strong>
                     <span>{track.artist}</span>
+                    {isPlaying && <span className="now-playing">▶️ Играет</span>}
                 </div>
             </div>
         </div>
