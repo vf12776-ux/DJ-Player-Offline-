@@ -205,6 +205,15 @@
             border-bottom: 2px solid #1db954;
             padding-bottom: 10px;
         }
+        
+        .ios-warning {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -289,8 +298,7 @@
         }
 
         // Компонент AudioPlayer
-        function AudioPlayer({ track }) {
-            const [isPlaying, setIsPlaying] = useState(false);
+        function AudioPlayer({ track, isPlaying, onPlay, onStop }) {
             const [currentTime, setCurrentTime] = useState(0);
             const [duration, setDuration] = useState(0);
             const audioRef = useRef(null);
@@ -301,7 +309,7 @@
                 const updateTime = () => setCurrentTime(audio.currentTime);
                 const updateDuration = () => setDuration(audio.duration);
                 const handleEnd = () => {
-                    setIsPlaying(false);
+                    onStop();
                     setCurrentTime(0);
                     
                     // Автопереход на следующий трек
@@ -327,23 +335,16 @@
             const togglePlay = () => {
                 if (isPlaying) {
                     audioRef.current.pause();
-                    setIsPlaying(false);
+                    onStop();
                 } else {
-                    // Останавливаем ВСЕ другие аудио
-                    const allAudios = document.querySelectorAll('audio');
-                    allAudios.forEach(audio => {
-                        if (audio !== audioRef.current) {
-                            audio.pause();
-                            audio.currentTime = 0;
-                        }
-                    });
-                    
+                    onPlay(track.id);
                     audioRef.current.play()
                         .then(() => {
-                            setIsPlaying(true);
+                            // Успешное воспроизведение
                         })
                         .catch(error => {
                             console.error('Error playing audio:', error);
+                            onStop();
                         });
                 }
             };
@@ -401,6 +402,14 @@
         function App() {
             const [localFiles, setLocalFiles] = useState([]);
             const [playlist, setPlaylist] = useState([]);
+            const [currentTrackId, setCurrentTrackId] = useState(null);
+            const [isIOS, setIsIOS] = useState(false);
+
+            // Определяем iOS
+            useEffect(() => {
+                const isAppleDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                setIsIOS(isAppleDevice);
+            }, []);
 
             const handleFilesSelect = (files) => {
                 setLocalFiles(files);
@@ -421,6 +430,19 @@
                 setPlaylist(prev => [...prev, ...newTracks]);
             };
 
+            const handlePlay = (trackId) => {
+                // Останавливаем все аудио
+                document.querySelectorAll('audio').forEach(audio => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                });
+                setCurrentTrackId(trackId);
+            };
+
+            const handleStop = () => {
+                setCurrentTrackId(null);
+            };
+
             // Обработчик автоперехода на следующий трек
             useEffect(() => {
                 const handleTrackEnded = (event) => {
@@ -429,11 +451,19 @@
                     
                     if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
                         const nextTrack = playlist[currentIndex + 1];
+                        
                         // Запускаем следующий трек через 1 секунду
                         setTimeout(() => {
+                            handlePlay(nextTrack.id);
                             const nextAudio = document.querySelector(`audio[src="${nextTrack.url}"]`);
                             if (nextAudio) {
-                                nextAudio.play();
+                                nextAudio.play()
+                                    .then(() => {
+                                        console.log('Автопереход на следующий трек');
+                                    })
+                                    .catch(error => {
+                                        console.log('Автовоспроизведение заблокировано');
+                                    });
                             }
                         }, 1000);
                     }
@@ -447,6 +477,9 @@
                 React.createElement('div', { className: 'App' },
                     React.createElement('header', { className: 'App-header' },
                         React.createElement('h1', null, 'DJ Плеер'),
+                        isIOS && React.createElement('div', { className: 'ios-warning' }, 
+                            'На iOS автопереход может не работать из-за ограничений браузера'
+                        ),
                         React.createElement(FileUpload, { onFilesSelect: handleFilesSelect }),
                         
                         localFiles.length > 0 && React.createElement('div', { className: 'local-files-list' },
@@ -461,7 +494,13 @@
                         playlist.length > 0 && React.createElement('div', { className: 'playlist' },
                             React.createElement('h3', null, `Плейлист (${playlist.length} треков)`),
                             playlist.map(track =>
-                                React.createElement(AudioPlayer, { key: track.id, track: track })
+                                React.createElement(AudioPlayer, { 
+                                    key: track.id, 
+                                    track: track,
+                                    isPlaying: currentTrackId === track.id,
+                                    onPlay: handlePlay,
+                                    onStop: handleStop
+                                })
                             )
                         )
                     )
