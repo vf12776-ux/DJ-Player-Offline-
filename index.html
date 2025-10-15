@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой DJ Плеер</title>
+    <title>DJ Плеер</title>
     <style>
         body {
             margin: 0;
@@ -303,6 +303,14 @@
                 const handleEnd = () => {
                     setIsPlaying(false);
                     setCurrentTime(0);
+                    
+                    // Автопереход на следующий трек
+                    setTimeout(() => {
+                        const event = new CustomEvent('trackEnded', { 
+                            detail: { endedTrackId: track.id }
+                        });
+                        window.dispatchEvent(event);
+                    }, 100);
                 };
 
                 audio.addEventListener('timeupdate', updateTime);
@@ -412,6 +420,28 @@
                 
                 setPlaylist(prev => [...prev, ...newTracks]);
             };
+
+            // Обработчик автоперехода на следующий трек
+            useEffect(() => {
+                const handleTrackEnded = (event) => {
+                    const endedTrackId = event.detail.endedTrackId;
+                    const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
+                    
+                    if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+                        const nextTrack = playlist[currentIndex + 1];
+                        // Запускаем следующий трек через 1 секунду
+                        setTimeout(() => {
+                            const nextAudio = document.querySelector(`audio[src="${nextTrack.url}"]`);
+                            if (nextAudio) {
+                                nextAudio.play();
+                            }
+                        }, 1000);
+                    }
+                };
+
+                window.addEventListener('trackEnded', handleTrackEnded);
+                return () => window.removeEventListener('trackEnded', handleTrackEnded);
+            }, [playlist]);
 
             return (
                 React.createElement('div', { className: 'App' },
