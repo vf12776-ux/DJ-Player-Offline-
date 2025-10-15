@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DJ App</title>
+    <title>DJ App FIXED</title>
     <style>
-        /* Основные стили */
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -23,7 +22,6 @@
             margin-bottom: 30px;
         }
 
-        /* Стили для загрузки файлов */
         .file-upload {
             margin: 20px 0;
             width: 100%;
@@ -81,7 +79,6 @@
             background: #1ed760;
         }
 
-        /* Стили для списка файлов */
         .local-files-list {
             margin-top: 20px;
             text-align: left;
@@ -108,12 +105,16 @@
             border-left: 3px solid #1db954;
         }
 
-        /* Стили для аудиоплеера */
         .audio-player {
             background: #282828;
             border-radius: 10px;
             padding: 15px;
             margin: 10px 0;
+        }
+
+        .audio-player.playing {
+            border: 2px solid red;
+            background: rgba(255, 0, 0, 0.1);
         }
 
         .player-controls {
@@ -135,35 +136,8 @@
             justify-content: center;
         }
 
-        .progress-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-grow: 1;
-        }
-
-        .time-current, .time-duration {
-            color: #b3b3b3;
-            font-size: 12px;
-            min-width: 40px;
-        }
-
-        .progress-bar {
-            flex-grow: 1;
-            height: 4px;
-            border-radius: 2px;
-            background: #535353;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .progress-bar::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #1db954;
-            cursor: pointer;
+        .play-button.playing {
+            background: red;
         }
 
         .track-info {
@@ -182,7 +156,12 @@
             font-size: 12px;
         }
 
-        /* Стили для плейлиста */
+        .now-playing {
+            color: red;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
         .playlist {
             margin-top: 30px;
             text-align: left;
@@ -193,22 +172,6 @@
             border-bottom: 2px solid #1db954;
             padding-bottom: 10px;
         }
-        /* Новые стили для активного трека */
-.audio-player.active {
-    border: 2px solid #1db954;
-    background: rgba(29, 185, 84, 0.1);
-}
-
-.now-playing {
-    color: #1db954;
-    font-size: 10px;
-    font-weight: bold;
-    margin-top: 2px;
-}
-
-.play-button.playing {
-    background: #e22134;
-}
     </style>
 </head>
 <body>
@@ -292,80 +255,57 @@
             );
         }
 
-        // Компонент AudioPlayer
+        // Компонент AudioPlayer FIXED
         function AudioPlayer({ track }) {
             const [isPlaying, setIsPlaying] = useState(false);
-            const [currentTime, setCurrentTime] = useState(0);
-            const [duration, setDuration] = useState(0);
             const audioRef = useRef(null);
-
-            useEffect(() => {
-                const audio = audioRef.current;
-                
-                const updateTime = () => setCurrentTime(audio.currentTime);
-                const updateDuration = () => setDuration(audio.duration);
-                const handleEnd = () => setIsPlaying(false);
-
-                audio.addEventListener('timeupdate', updateTime);
-                audio.addEventListener('loadedmetadata', updateDuration);
-                audio.addEventListener('ended', handleEnd);
-
-                return () => {
-                    audio.removeEventListener('timeupdate', updateTime);
-                    audio.removeEventListener('loadedmetadata', updateDuration);
-                    audio.removeEventListener('ended', handleEnd);
-                };
-            }, []);
 
             const togglePlay = () => {
                 if (isPlaying) {
+                    // Пауза
                     audioRef.current.pause();
+                    setIsPlaying(false);
                 } else {
-                    audioRef.current.play();
+                    // Останавливаем ВСЕ другие аудио
+                    const allAudios = document.querySelectorAll('audio');
+                    allAudios.forEach(audio => {
+                        if (audio !== audioRef.current) {
+                            audio.pause();
+                            // Сбрасываем время
+                            audio.currentTime = 0;
+                        }
+                    });
+                    
+                    // Запускаем текущее
+                    audioRef.current.play()
+                        .then(() => {
+                            setIsPlaying(true);
+                        })
+                        .catch(error => {
+                            console.error('Error playing audio:', error);
+                        });
                 }
-                setIsPlaying(!isPlaying);
-            };
-
-            const handleSeek = (e) => {
-                const seekTime = parseFloat(e.target.value);
-                audioRef.current.currentTime = seekTime;
-                setCurrentTime(seekTime);
-            };
-
-            const formatTime = (time) => {
-                if (isNaN(time)) return '0:00';
-                const minutes = Math.floor(time / 60);
-                const seconds = Math.floor(time % 60);
-                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
             };
 
             return (
-                React.createElement('div', { className: 'audio-player' },
+                React.createElement('div', { 
+                    className: `audio-player ${isPlaying ? 'playing' : ''}`
+                },
                     React.createElement('audio', { 
                         ref: audioRef, 
-                        src: track.url, 
-                        preload: 'metadata' 
+                        src: track.url
                     }),
                     React.createElement('div', { className: 'player-controls' },
                         React.createElement('button', { 
-                            className: 'play-button', 
-                            onClick: togglePlay 
+                            className: `play-button ${isPlaying ? 'playing' : ''}`, 
+                            onClick: togglePlay
                         }, isPlaying ? '⏸️' : '▶️'),
-                        React.createElement('div', { className: 'progress-container' },
-                            React.createElement('span', { className: 'time-current' }, formatTime(currentTime)),
-                            React.createElement('input', {
-                                type: 'range',
-                                min: 0,
-                                max: duration || 0,
-                                value: currentTime,
-                                onChange: handleSeek,
-                                className: 'progress-bar'
-                            }),
-                            React.createElement('span', { className: 'time-duration' }, formatTime(duration))
-                        ),
                         React.createElement('div', { className: 'track-info' },
                             React.createElement('strong', null, track.name),
-                            React.createElement('span', null, track.artist)
+                            React.createElement('span', null, track.artist),
+                            isPlaying && React.createElement('span', { 
+                                className: 'now-playing'
+                            }, 'СЕЙЧАС ИГРАЕТ')
                         )
                     )
                 )
@@ -399,7 +339,7 @@
             return (
                 React.createElement('div', { className: 'App' },
                     React.createElement('header', { className: 'App-header' },
-                        React.createElement('h1', null, 'DJ App'),
+                        React.createElement('h1', null, 'DJ App FIXED - треки по одному!'),
                         React.createElement(FileUpload, { onFilesSelect: handleFilesSelect }),
                         
                         localFiles.length > 0 && React.createElement('div', { className: 'local-files-list' },
