@@ -1,189 +1,413 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DJ App</title>
     <style>
+        /* Основные стили */
         body {
-            background-color: #1e1e1e;
-            color: #ffffff;
-            font-family: Helvetica, Arial, sans-serif;
             margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #121212;
+            color: white;
+        }
+
+        .App {
+            text-align: center;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
         }
-        .track {
-            background-color: #2a2a2a;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
+
+        .App-header h1 {
+            color: #1db954;
+            margin-bottom: 30px;
+        }
+
+        /* Стили для загрузки файлов */
+        .file-upload {
+            margin: 20px 0;
             width: 100%;
-            max-width: 600px;
         }
-        button {
-            background-color: #ff4d4d;
-            color: #ffffff;
+
+        .upload-area {
+            border: 2px dashed #1db954;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(29, 185, 84, 0.05);
+        }
+
+        .upload-area:hover, .upload-area.dragging {
+            background: rgba(29, 185, 84, 0.1);
+            border-color: #1ed760;
+        }
+
+        .upload-content {
+            color: #1db954;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-content p {
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .upload-content small {
+            color: #666;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .upload-button {
+            background: #1db954;
+            color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .upload-button:hover {
+            background: #1ed760;
+        }
+
+        /* Стили для списка файлов */
+        .local-files-list {
+            margin-top: 20px;
+            text-align: left;
+            background: #282828;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .local-files-list h3 {
+            color: #1db954;
+            margin-bottom: 10px;
+        }
+
+        .local-files-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .local-files-list li {
+            background: rgba(29, 185, 84, 0.1);
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 3px solid #1db954;
+        }
+
+        /* Стили для аудиоплеера */
+        .audio-player {
+            background: #282828;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .play-button {
+            background: #1db954;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
             font-size: 16px;
             cursor: pointer;
-            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        button:hover {
-            background-color: #e63939;
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
         }
-        input[type="range"] {
-            width: 100px;
-            margin: 0 10px;
-        }
-        input[type="file"] {
-            margin: 10px 0;
-            color: #ffffff;
-            width: 100%;
-        }
-        .progress {
-            width: 100%;
-            max-width: 400px;
-            margin-top: 10px;
-        }
-        #log {
-            background-color: #333;
-            padding: 10px;
-            margin-top: 10px;
-            width: 100%;
-            max-width: 600px;
-            height: 100px;
-            overflow-y: auto;
+
+        .time-current, .time-duration {
+            color: #b3b3b3;
             font-size: 12px;
+            min-width: 40px;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: #535353;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #1db954;
+            cursor: pointer;
+        }
+
+        .track-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+
+        .track-info strong {
+            color: white;
+            font-size: 14px;
+        }
+
+        .track-info span {
+            color: #b3b3b3;
+            font-size: 12px;
+        }
+
+        /* Стили для плейлиста */
+        .playlist {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .playlist h3 {
+            color: #1db954;
+            border-bottom: 2px solid #1db954;
+            padding-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>DJ App</h1>
-    <button id="playAll">Play All</button>
-    <div class="track">
-        <h2>Track 1</h2>
-        <input type="file" id="track1" accept="audio/mp3,audio/wav,audio/mpeg">
-        <label>Pan: <input type="range" id="pan1" min="-1" max="1" step="0.1" value="0"></label>
-        <label>Gain: <input type="range" id="gain1" min="0" max="2" step="0.1" value="1"></label>
-        <label><input type="checkbox" id="loop1" checked> Loop</label>
-        <input type="range" id="progress1" min="0" max="100" value="0" class="progress" disabled>
-    </div>
-    <div id="log">Log:<br></div>
-    <script>
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        let track1 = null;
-        let source = null;
-        let panNode = null;
-        let gainNode = null;
-        let playing = false;
-        let startTime = 0;
+    <div id="root"></div>
 
-        const playAllBtn = document.getElementById('playAll');
-        const trackInput = document.getElementById('track1');
-        const panSlider = document.getElementById('pan1');
-        const gainSlider = document.getElementById('gain1');
-        const loopCheckbox = document.getElementById('loop1');
-        const progressBar = document.getElementById('progress1');
-        const logDiv = document.getElementById('log');
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-        function log(message) {
-            logDiv.innerHTML += `${new Date().toLocaleTimeString()}: ${message}<br>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // Компонент FileUpload
+        function FileUpload({ onFilesSelect }) {
+            const fileInputRef = useRef(null);
+            const [isDragging, setIsDragging] = useState(false);
+
+            const handleFileSelect = (files) => {
+                const fileList = Array.from(files);
+                if (fileList.length > 0) {
+                    onFilesSelect(fileList);
+                }
+            };
+
+            const handleInputChange = (event) => {
+                handleFileSelect(event.target.files);
+            };
+
+            const handleClick = () => {
+                fileInputRef.current.click();
+            };
+
+            const handleDragOver = (event) => {
+                event.preventDefault();
+                setIsDragging(true);
+            };
+
+            const handleDragLeave = (event) => {
+                event.preventDefault();
+                setIsDragging(false);
+            };
+
+            const handleDrop = (event) => {
+                event.preventDefault();
+                setIsDragging(false);
+                const files = event.dataTransfer.files;
+                handleFileSelect(files);
+            };
+
+            return (
+                React.createElement('div', { className: 'file-upload' },
+                    React.createElement('input', {
+                        type: 'file',
+                        ref: fileInputRef,
+                        onChange: handleInputChange,
+                        multiple: true,
+                        accept: '.mp3,.wav,.m4a,.aac',
+                        style: { display: 'none' }
+                    }),
+                    React.createElement('div', {
+                        className: `upload-area ${isDragging ? 'dragging' : ''}`,
+                        onDragOver: handleDragOver,
+                        onDragLeave: handleDragLeave,
+                        onDrop: handleDrop,
+                        onClick: handleClick
+                    },
+                        React.createElement('div', { className: 'upload-content' },
+                            React.createElement('div', { className: 'upload-icon' }, '📁'),
+                            React.createElement('p', null, 'Нажмите или перетащите файлы для загрузки'),
+                            React.createElement('small', null, 'Поддерживаемые форматы: MP3, WAV, M4A, AAC'),
+                            React.createElement('button', {
+                                className: 'upload-button',
+                                onClick: (e) => {
+                                    e.stopPropagation();
+                                    handleClick();
+                                }
+                            }, 'Выбрать файлы')
+                        )
+                    )
+                )
+            );
         }
 
-        // Разблокировка AudioContext на iOS
-        function unlockAudioContext() {
-            if (ctx.state === 'suspended') {
-                ctx.resume().then(() => log('AudioContext resumed'));
-            }
+        // Компонент AudioPlayer
+        function AudioPlayer({ track }) {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentTime, setCurrentTime] = useState(0);
+            const [duration, setDuration] = useState(0);
+            const audioRef = useRef(null);
+
+            useEffect(() => {
+                const audio = audioRef.current;
+                
+                const updateTime = () => setCurrentTime(audio.currentTime);
+                const updateDuration = () => setDuration(audio.duration);
+                const handleEnd = () => setIsPlaying(false);
+
+                audio.addEventListener('timeupdate', updateTime);
+                audio.addEventListener('loadedmetadata', updateDuration);
+                audio.addEventListener('ended', handleEnd);
+
+                return () => {
+                    audio.removeEventListener('timeupdate', updateTime);
+                    audio.removeEventListener('loadedmetadata', updateDuration);
+                    audio.removeEventListener('ended', handleEnd);
+                };
+            }, []);
+
+            const togglePlay = () => {
+                if (isPlaying) {
+                    audioRef.current.pause();
+                } else {
+                    audioRef.current.play();
+                }
+                setIsPlaying(!isPlaying);
+            };
+
+            const handleSeek = (e) => {
+                const seekTime = parseFloat(e.target.value);
+                audioRef.current.currentTime = seekTime;
+                setCurrentTime(seekTime);
+            };
+
+            const formatTime = (time) => {
+                if (isNaN(time)) return '0:00';
+                const minutes = Math.floor(time / 60);
+                const seconds = Math.floor(time % 60);
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            return (
+                React.createElement('div', { className: 'audio-player' },
+                    React.createElement('audio', { 
+                        ref: audioRef, 
+                        src: track.url, 
+                        preload: 'metadata' 
+                    }),
+                    React.createElement('div', { className: 'player-controls' },
+                        React.createElement('button', { 
+                            className: 'play-button', 
+                            onClick: togglePlay 
+                        }, isPlaying ? '⏸️' : '▶️'),
+                        React.createElement('div', { className: 'progress-container' },
+                            React.createElement('span', { className: 'time-current' }, formatTime(currentTime)),
+                            React.createElement('input', {
+                                type: 'range',
+                                min: 0,
+                                max: duration || 0,
+                                value: currentTime,
+                                onChange: handleSeek,
+                                className: 'progress-bar'
+                            }),
+                            React.createElement('span', { className: 'time-duration' }, formatTime(duration))
+                        ),
+                        React.createElement('div', { className: 'track-info' },
+                            React.createElement('strong', null, track.name),
+                            React.createElement('span', null, track.artist)
+                        )
+                    )
+                )
+            );
         }
-        document.addEventListener('touchstart', unlockAudioContext);
-        document.addEventListener('click', unlockAudioContext);
 
-        trackInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) {
-                log('No file selected');
-                return;
-            }
-            log(`Selected file: ${file.name}, size: ${file.size} bytes`);
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                track1 = await ctx.decodeAudioData(arrayBuffer);
-                log(`Loaded ${file.name}: ${track1.duration} s, ${track1.sampleRate} Hz, ${track1.numberOfChannels} channels`);
-            } catch (e) {
-                log(`Error loading audio: ${e.message}`);
-            }
-        });
+        // Главный компонент App
+        function App() {
+            const [localFiles, setLocalFiles] = useState([]);
+            const [playlist, setPlaylist] = useState([]);
 
-        panSlider.addEventListener('input', () => {
-            const value = parseFloat(panSlider.value);
-            if (panNode) {
-                panNode.pan.value = value;
-            }
-            log(`Track 1 pan set to ${value}`);
-        });
+            const handleFilesSelect = (files) => {
+                setLocalFiles(files);
+                
+                const newTracks = files.map(file => {
+                    const url = URL.createObjectURL(file);
+                    return {
+                        id: `local-${Date.now()}-${file.name}`,
+                        name: file.name.replace(/\.(mp3|wav|m4a|aac)$/i, ''),
+                        artist: 'Локальный файл',
+                        duration: 'Неизвестно',
+                        url: url,
+                        isLocal: true,
+                        file: file
+                    };
+                });
+                
+                setPlaylist(prev => [...prev, ...newTracks]);
+            };
 
-        gainSlider.addEventListener('input', () => {
-            const value = parseFloat(gainSlider.value);
-            if (gainNode) {
-                gainNode.gain.value = value;
-            }
-            log(`Track 1 gain set to ${value}`);
-        });
-
-        playAllBtn.addEventListener('click', () => {
-            if (!track1) {
-                log("No track loaded");
-                return;
-            }
-            if (playing) {
-                source.stop();
-                playing = false;
-                playAllBtn.textContent = "Play All";
-                log("Stopped playback");
-            } else {
-                source = ctx.createBufferSource();
-                source.buffer = track1;
-                source.loop = loopCheckbox.checked;
-
-                panNode = ctx.createStereoPanner();
-                panNode.pan.value = parseFloat(panSlider.value);
-
-                gainNode = ctx.createGain();
-                gainNode.gain.value = parseFloat(gainSlider.value);
-
-                source.connect(panNode).connect(gainNode).connect(ctx.destination);
-                source.start();
-                playing = true;
-                startTime = ctx.currentTime;
-                playAllBtn.textContent = "Stop";
-                log("Started playback");
-                updateProgress();
-            }
-        });
-
-        function updateProgress() {
-            if (!playing || !track1) return;
-            const progress = ((ctx.currentTime - startTime) / track1.duration) * 100;
-            progressBar.value = progress;
-            if (progress >= 100 && !loopCheckbox.checked) {
-                playing = false;
-                playAllBtn.textContent = "Play All";
-                log("Playback finished");
-            } else {
-                requestAnimationFrame(updateProgress);
-            }
+            return (
+                React.createElement('div', { className: 'App' },
+                    React.createElement('header', { className: 'App-header' },
+                        React.createElement('h1', null, 'DJ App'),
+                        React.createElement(FileUpload, { onFilesSelect: handleFilesSelect }),
+                        
+                        localFiles.length > 0 && React.createElement('div', { className: 'local-files-list' },
+                            React.createElement('h3', null, `Выбранные файлы (${localFiles.length}):`),
+                            React.createElement('ul', null,
+                                localFiles.map((file, index) =>
+                                    React.createElement('li', { key: index }, file.name)
+                                )
+                            )
+                        ),
+                        
+                        playlist.length > 0 && React.createElement('div', { className: 'playlist' },
+                            React.createElement('h3', null, `Плейлист (${playlist.length} треков)`),
+                            playlist.map(track =>
+                                React.createElement(AudioPlayer, { key: track.id, track: track })
+                            )
+                        )
+                    )
+                )
+            );
         }
+
+        // Рендерим приложение
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 </body>
 </html>
