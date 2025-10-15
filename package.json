@@ -1,0 +1,31 @@
+{
+  "name": "dj-player",
+  "version": "1.0.0",
+  "description": "DJ Плеер для Mac",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "Твое имя",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^22.0.0",
+    "electron-builder": "^23.0.0"
+  },
+  "build": {
+    "appId": "com.djplayer.app",
+    "productName": "DJ Плеер",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html"
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "icon": "icon.icns"
+    }
+  }
+}
