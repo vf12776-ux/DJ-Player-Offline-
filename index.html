@@ -460,6 +460,7 @@
                                 nextAudio.play()
                                     .then(() => {
                                         console.log('Автопереход на следующий трек');
+                                        setCurrentTrackId(nextTrack.id);
                                     })
                                     .catch(error => {
                                         console.log('Автовоспроизведение заблокировано');
