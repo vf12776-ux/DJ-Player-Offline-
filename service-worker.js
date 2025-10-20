@@ -1,11 +1,14 @@
-// service-worker.js
+// service-// service-worker.js
 const CACHE_NAME = 'dj-player-v1';
 const URLS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+    '/',
+    '/index.html', 
+    '/manifest.json',
+    '/icons/icon-192.png',
+    '/icons/icon-512.png',
+    'https://unpkg.com/react@17/umd/react.development.js',
+    'https://unpkg.com/react-dom@17/umd/react-dom.development.js',
+    'https://unpkg.com/@babel/standalone/babel.min.js'
 ];
 
 // Установка - жестко кэшируем все необходимое
@@ -14,7 +17,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('📦 Кэширую файлы для оффлайна:', URLS_TO_CACHE);
+        console.log('📦 Кэширую файлы для оффлайна');
         return cache.addAll(URLS_TO_CACHE);
       })
       .then(() => {
@@ -49,10 +52,7 @@ self.addEventListener('activate', event => {
 
 // Перехват запросов
 self.addEventListener('fetch', event => {
-  // Пропускаем не-GET запросы и chrome-extension
-  if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension')) {
-    return;
-  }
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
     caches.match(event.request)
@@ -62,17 +62,15 @@ self.addEventListener('fetch', event => {
           return response;
         }
 
-        // Если нет в кэше - сеть + кэшируем для будущего
+        // Если нет в кэше - идем в сеть
         return fetch(event.request)
           .then(response => {
-            // Проверяем валидный ответ
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
 
-            // Клонируем ответ для кэширования
+            // Кэшируем для будущего
             const responseToCache = response.clone();
-
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
@@ -82,11 +80,11 @@ self.addEventListener('fetch', event => {
           })
           .catch(error => {
             console.error('❌ Fetch failed:', error);
-            // Для главной страницы - всегда возвращаем закэшированную версию
+            // Для главной страницы возвращаем закэшированную версию
             if (event.request.destination === 'document') {
               return caches.match('/');
             }
           });
       })
   );
-});
+});.js
