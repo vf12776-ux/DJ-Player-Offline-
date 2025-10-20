@@ -517,5 +517,49 @@
  // Рендерим приложение
  ReactDOM.render(React.createElement(App), document.getElementById('root'));
  </script>
+ <script>
+// Регистрация сервис-воркера
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(function(registration) {
+                console.log('✅ Сервис-воркер зарегистрирован:', registration);
+            })
+            .catch(function(error) {
+                console.log('❌ Ошибка регистрации сервис-воркера:', error);
+            });
+    });
+}
+
+// Проверка оффлайн-статуса
+window.addEventListener('online', function() {
+    console.log('🌐 Онлайн');
+    document.body.classList.remove('offline');
+});
+
+window.addEventListener('offline', function() {
+    console.log('📴 Оффлайн');
+    document.body.classList.add('offline');
+});
+
+if (!navigator.onLine) {
+    document.body.classList.add('offline');
+}
+</script>
+
+<style>
+.offline::before {
+    content: "📴 Оффлайн";
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #ff4444;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 1000;
+}
+</style>
 </body>
 </html>
