@@ -633,5 +633,57 @@ if (!navigator.onLine) {
 </style>
  <script src="playlist-manager.js"></script>
 <script src="service-worker.js"></script>
+ <script>
+// Визуальный дебаггер для iOS
+setTimeout(() => {
+  const debugInfo = document.createElement('div');
+  debugInfo.style.cssText = `
+    position: fixed; 
+    top: 50px; 
+    left: 10px; 
+    background: rgba(0,0,0,0.8); 
+    color: white; 
+    padding: 10px; 
+    border-radius: 5px; 
+    font-size: 12px; 
+    z-index: 9999;
+    max-width: 300px;
+  `;
+  
+  // Проверяем базовые вещи
+  let status = '';
+  
+  if (!window.playlistManager) {
+    status = '❌ PlaylistManager не загружен';
+  } else {
+    status = '✅ PlaylistManager загружен\n';
+    
+    // Проверяем базу
+    window.playlistManager.init()
+      .then(() => window.playlistManager.getAllTracks())
+      .then(tracks => {
+        status += `📀 В базе: ${tracks.length} треков`;
+        debugInfo.textContent = status;
+        
+        // Если есть треки - пробуем загрузить в плейлист
+        if (tracks.length > 0) {
+          status += '\n🔄 Загружаю в плейлист...';
+          debugInfo.textContent = status;
+          
+          // Здесь нужно вызвать загрузку треков в React
+          // Но для этого нужно найти способ сообщить React
+        }
+      })
+      .catch(error => {
+        status += `❌ Ошибка базы: ${error.message}`;
+        debugInfo.textContent = status;
+      });
+  }
+  
+  debugInfo.textContent = status;
+  document.body.appendChild(debugInfo);
+  
+}, 1000);
+</script>
 </body>
 </html>
