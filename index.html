@@ -405,28 +405,41 @@
  }
 
  // Главный компонент App
- function App() {
-  const [tracks, setTracks] = useState([]);
-    
-    useEffect(() => {
-        const loadSavedTracks = async () => {
-            try {
-                await window.playlistManager.init();
-                const savedTracks = await window.playlistManager.getAllTracks();
-                if (savedTracks.length > 0) {
-                    setTracks(savedTracks.map(track => track.file));
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки плейлиста:', error);
-            }
-        };
-        loadSavedTracks();
-    }, []);
+function App() {
   const [localFiles, setLocalFiles] = useState([]);
- const [playlist, setPlaylist] = useState([]);
- const [currentTrackId, setCurrentTrackId] = useState(null);
- const [isIOS, setIsIOS] = useState(false);
+  const [playlist, setPlaylist] = useState([]);
+  const [currentTrackId, setCurrentTrackId] = useState(null);
+  const [isIOS, setIsIOS] = useState(false);
 
+  // Загрузка сохраненных треков при старте
+  useEffect(() => {
+    const loadSavedTracks = async () => {
+      try {
+        await window.playlistManager.init();
+        const savedTracks = await window.playlistManager.getAllTracks();
+        if (savedTracks.length > 0) {
+          // ПРАВИЛЬНО ЗАГРУЖАЕМ ТРЕКИ В ПЛЕЙЛИСТ
+          const loadedTracks = savedTracks.map(track => {
+            const url = URL.createObjectURL(track.file);
+            return {
+              id: `saved-${track.id}`,
+              name: track.file.name.replace(/\.(mp3|wav|m4a|aac)$/i, ''),
+              artist: 'Локальный файл',
+              duration: 'Неизвестно',
+              url: url,
+              isLocal: true,
+              file: track.file
+            };
+          });
+          setPlaylist(loadedTracks);
+          console.log('Загружено треков:', loadedTracks.length);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки плейлиста:', error);
+      }
+    };
+    loadSavedTracks();
+  }, []);
  // Определяем iOS
  useEffect(() => {
  const isAppleDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
