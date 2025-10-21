@@ -433,8 +433,18 @@
  setIsIOS(isAppleDevice);
  }, []);
 
- const handleFilesSelect = (files) => {
- setLocalFiles(files);
+  const handleFilesSelect = async (files) => {
+  // СОХРАНЯЕМ ФАЙЛЫ В БАЗУ ДАННЫХ
+  for (const file of files) {
+    try {
+      await window.playlistManager.saveTrack(file);
+      console.log('Сохранен файл:', file.name);
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+    }
+  }
+  
+  setLocalFiles(files);
  
  const newTracks = files.map(file => {
  const url = URL.createObjectURL(file);
@@ -447,8 +457,7 @@
  isLocal: true,
  file: file
  };
- });
- 
+ }); 
  setPlaylist(prev => [...prev, ...newTracks]);
  };
 
