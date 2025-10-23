@@ -24,8 +24,8 @@
       "index.html",
       "playlist-manager.js",
       "icon.png",
-      "icon.icns
-    ],
+      "icon.icns"
+   ],
     "mac": {
       "category": "public.app-category.music",
       "icon": "icon.icns"
