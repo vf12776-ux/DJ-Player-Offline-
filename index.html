@@ -224,9 +224,27 @@
 <body>
  <div id="root"></div>
 
- <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
- <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+ <script>
+// Встроенные React и Babel для полной оффлайн-работы
+window.React = {
+  createElement: (tag, props, ...children) => ({
+    type: tag,
+    props: { ...props, children },
+    key: props?.key,
+    ref: props?.ref
+  })
+};
+window.ReactDOM = {
+  render: (component, container) => {
+    if (typeof component === 'string') {
+      container.innerHTML = component;
+    }
+  }
+};
+window.Babel = {
+  transform: (code, options) => ({ code: code })
+};
+</script>
  <script src="playlist-manager.js"></script>
  
  <script type="text/babel">
