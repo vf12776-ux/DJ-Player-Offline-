@@ -21,7 +21,10 @@
     },
     "files": [
       "main.js",
-      "index.html"
+      "index.html",
+      "playlist-manager.js",
+      "icon.png",
+      "icon.icns
     ],
     "mac": {
       "category": "public.app-category.music",
