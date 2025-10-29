@@ -2,9 +2,47 @@ import React, { useState, useRef, useEffect } from 'react';
 
 let currentAudio = null;
 
-const AudioPlayer = ({ track }) => {
+const AudioPlayer = ({ track, onTrackEnd, isAutoPlay = false }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = useRef(null);
+
+    // Обработчик окончания трека
+    useEffect(() => {
+        const audio = audioRef.current;
+        
+        const handleEnded = () => {
+            setIsPlaying(false);
+            if (currentAudio === audio) {
+                currentAudio = null;
+            }
+            // Вызываем callback для переключения на следующий трек
+            if (onTrackEnd) {
+                onTrackEnd();
+            }
+        };
+
+        if (audio) {
+            audio.addEventListener('ended', handleEnded);
+        }
+
+        // Автовоспроизведение при монтировании, если включено
+        if (isAutoPlay && audio) {
+            audio.play()
+                .then(() => {
+                    setIsPlaying(true);
+                    currentAudio = audio;
+                })
+                .catch(error => {
+                    console.log('Автовоспроизведение заблокировано:', error);
+                });
+        }
+
+        return () => {
+            if (audio) {
+                audio.removeEventListener('ended', handleEnded);
+            }
+        };
+    }, [onTrackEnd, isAutoPlay]);
 
     const togglePlay = () => {
         if (isPlaying) {
