@@ -383,6 +383,7 @@
                         React.createElement('button', { 
                             className: `play-button ${isPlaying ? 'playing' : ''}`, 
                             onClick: togglePlay
+                            'data-track': track.id  
                         }, isPlaying ? '⏸️' : '▶️'),
                         React.createElement('div', { className: 'progress-container' },
                             React.createElement('span', { className: 'time-current' }, formatTime(currentTime)),
@@ -476,13 +477,39 @@
             };
 
             const handlePlay = (trackId) => {
-                // Останавливаем все аудио
-                document.querySelectorAll('audio').forEach(audio => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                });
-                setCurrentTrackId(trackId);
-            };
+    console.log('Запускаем трек:', trackId);
+    
+    // Останавливаем все аудио
+    document.querySelectorAll('audio').forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+    
+    // Устанавливаем новый трек
+    setCurrentTrackId(trackId);
+    
+    // Даем React время обновить состояние, затем запускаем воспроизведение
+    setTimeout(() => {
+        const audioElements = document.querySelectorAll('audio');
+        audioElements.forEach(audio => {
+            if (audio.src.includes(playlist.find(t => t.id === trackId)?.url)) {
+                console.log('Найден аудио элемент для воспроизведения');
+                audio.play()
+                    .then(() => {
+                        console.log('Трек успешно запущен:', trackId);
+                    })
+                    .catch(error => {
+                        console.error('Ошибка воспроизведения:', error);
+                        // Если автовоспроизведение заблокировано, пробуем еще раз по клику
+                        const playButton = document.querySelector(`[data-track="${trackId}"]`);
+                        if (playButton) {
+                            playButton.onclick = () => audio.play();
+                        }
+                    });
+            }
+        });
+    }, 100);
+};
 
             const handleStop = () => {
                 setCurrentTrackId(null);
