@@ -315,9 +315,11 @@
  const updateTime = () => setCurrentTime(audio.currentTime);
  const updateDuration = () => setDuration(audio.duration);
  const handleEnd = () => {
- onStop();
- setCurrentTime(0);
- 
+    setCurrentTime(0);
+    // Вызываем колбэк окончания трека
+    if (onEnded) {
+        onEnded(track.id);
+    } 
  // Автопереход на следующий трек
  setTimeout(() => {
  const event = new CustomEvent('trackEnded', { 
@@ -486,37 +488,15 @@ function App() {
  const handleStop = () => {
  setCurrentTrackId(null);
  };
-
- // Обработчик автоперехода на следующий трек
- useEffect(() => {
- const handleTrackEnded = (event) => {
- const endedTrackId = event.detail.endedTrackId;
- const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
- 
- if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
- const nextTrack = playlist[currentIndex + 1];
- 
- // Запускаем следующий трек через 1 секунду
- setTimeout(() => {
- handlePlay(nextTrack.id);
- const nextAudio = document.querySelector(`audio[src="${nextTrack.url}"]`);
- if (nextAudio) {
- nextAudio.play()
- .then(() => {
- console.log('Автопереход на следующий трек');
- setCurrentTrackId(nextTrack.id);
- })
- .catch(error => {
- console.log('Автовоспроизведение заблокировано');
- });
- }
- }, 1000);
- }
- };
-
- window.addEventListener('trackEnded', handleTrackEnded);
- return () => window.removeEventListener('trackEnded', handleTrackEnded);
- }, [playlist]);
+ const handleTrackEnd = (endedTrackId) => {
+    const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
+    if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+        const nextTrack = playlist[currentIndex + 1];
+        setCurrentTrackId(nextTrack.id);
+    } else {
+        setCurrentTrackId(null);
+    }
+};
 
  return (
  React.createElement('div', { className: 'App' },
@@ -544,8 +524,10 @@ function App() {
  track: track,
  isPlaying: currentTrackId === track.id,
  onPlay: handlePlay,
- onStop: handleStop
- })
+ onStop: handleStop,
+  onEnded: handleTrackEnd 
+})
+
  )
  )
  )
