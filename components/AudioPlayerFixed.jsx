@@ -1,24 +1,36 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
-let currentAudio = null;
-
-const AudioPlayerFixed = ({ track }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
+const AudioPlayerFixed = ({ track, isPlaying, onPlay, onPause, onEnded }) => {
     const audioRef = useRef(null);
+
+    // Синхронизация состояния воспроизведения
+    useEffect(() => {
+        if (isPlaying) {
+            audioRef.current.play();
+        } else {
+            audioRef.current.pause();
+        }
+    }, [isPlaying]);
+
+    // Обработчик окончания трека
+    useEffect(() => {
+        const audio = audioRef.current;
+        const handleEnded = () => {
+            if (onEnded) onEnded();
+        };
+
+        audio.addEventListener('ended', handleEnded);
+        
+        return () => {
+            audio.removeEventListener('ended', handleEnded);
+        };
+    }, [onEnded]);
 
     const togglePlay = () => {
         if (isPlaying) {
-            audioRef.current.pause();
-            setIsPlaying(false);
+            if (onPause) onPause();
         } else {
-            // Останавливаем предыдущий трек
-            if (currentAudio) {
-                currentAudio.pause();
-            }
-            // Запускаем новый
-            audioRef.current.play();
-            setIsPlaying(true);
-            currentAudio = audioRef.current;
+            if (onPlay) onPlay();
         }
     };
 
