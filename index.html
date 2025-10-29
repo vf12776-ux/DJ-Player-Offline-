@@ -1,8 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <!-- ... остальная часть head без изменений ... -->
     <link rel="icon" type="image/png" href="icon1.png">
     <link rel="apple-touch-icon" href="icon1.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,14 +10,215 @@
     <title>DJ Плеер</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* ... ваш существующий CSS без изменений ... */
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: #121212;
             color: white;
         }
-        /* ... остальные стили ... */
+
+        .App {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .App-header h1 {
+            color: #1db954;
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .upload-area {
+            border: 2px dashed #1db954;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(29, 185, 84, 0.05);
+        }
+
+        .upload-area:hover, .upload-area.dragging {
+            background: rgba(29, 185, 84, 0.1);
+            border-color: #1ed760;
+        }
+
+        .upload-content {
+            color: #1db954;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-content p {
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .upload-content small {
+            color: #666;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .upload-button {
+            background: #1db954;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .upload-button:hover {
+            background: #1ed760;
+        }
+
+        .local-files-list {
+            margin-top: 20px;
+            text-align: left;
+            background: #282828;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .local-files-list h3 {
+            color: #1db954;
+            margin-bottom: 10px;
+        }
+
+        .local-files-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .local-files-list li {
+            background: rgba(29, 185, 84, 0.1);
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 3px solid #1db954;
+        }
+
+        .audio-player {
+            background: #282828;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .audio-player.playing {
+            border: 2px solid #1db954;
+            background: rgba(29, 185, 84, 0.1);
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .play-button {
+            background: #1db954;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-button.playing {
+            background: #1db954;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .time-current, .time-duration {
+            color: #b3b3b3;
+            font-size: 12px;
+            min-width: 40px;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: #535353;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #1db954;
+            cursor: pointer;
+        }
+
+        .track-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+            text-align: left;
+        }
+
+        .track-info strong {
+            color: white;
+            font-size: 14px;
+        }
+
+        .track-info span {
+            color: #b3b3b3;
+            font-size: 12px;
+        }
+
+        .now-playing {
+            color: #1db954;
+            font-weight: bold;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .playlist {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .playlist h3 {
+            color: #1db954;
+            border-bottom: 2px solid #1db954;
+            padding-bottom: 10px;
+        }
+        
+        .ios-warning {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -33,7 +232,7 @@
     <script type="text/babel">
         const { useState, useRef, useEffect } = React;
 
-        // Компонент FileUpload (без изменений)
+        // Компонент FileUpload
         function FileUpload({ onFilesSelect }) {
             const fileInputRef = useRef(null);
             const [isDragging, setIsDragging] = useState(false);
@@ -104,8 +303,8 @@
             );
         }
 
-        // Компонент AudioPlayer (ИСПРАВЛЕННАЯ ВЕРСИЯ)
-        function AudioPlayer({ track, isPlaying, onPlay, onStop, onEnded }) {
+        // Компонент AudioPlayer с исправленным автовоспроизведением
+        function AudioPlayer({ track, isPlaying, onPlay, onStop }) {
             const [currentTime, setCurrentTime] = useState(0);
             const [duration, setDuration] = useState(0);
             const audioRef = useRef(null);
@@ -115,11 +314,19 @@
                 
                 const updateTime = () => setCurrentTime(audio.currentTime);
                 const updateDuration = () => setDuration(audio.duration);
+                
+                // Обработчик окончания трека - КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
                 const handleEnd = () => {
+                    console.log('Трек закончился:', track.name);
                     setCurrentTime(0);
-                    if (onEnded) {
-                        onEnded(track.id);
-                    }
+                    
+                    // Автопереход на следующий трек
+                    setTimeout(() => {
+                        const event = new CustomEvent('trackEnded', { 
+                            detail: { endedTrackId: track.id }
+                        });
+                        window.dispatchEvent(event);
+                    }, 100);
                 };
 
                 audio.addEventListener('timeupdate', updateTime);
@@ -131,7 +338,7 @@
                     audio.removeEventListener('loadedmetadata', updateDuration);
                     audio.removeEventListener('ended', handleEnd);
                 };
-            }, [onEnded, track.id]);
+            }, []);
 
             const togglePlay = () => {
                 if (isPlaying) {
@@ -199,7 +406,7 @@
             );
         }
 
-        // Главный компонент App (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+        // Главный компонент App с исправленным автовоспроизведением
         function App() {
             const [localFiles, setLocalFiles] = useState([]);
             const [playlist, setPlaylist] = useState([]);
@@ -242,7 +449,6 @@
             }, []);
 
             const handleFilesSelect = async (files) => {
-                // СОХРАНЯЕМ ФАЙЛЫ В БАЗУ ДАННЫХ
                 for (const file of files) {
                     try {
                         await window.playlistManager.saveTrack(file);
@@ -282,17 +488,34 @@
                 setCurrentTrackId(null);
             };
 
-            // НОВАЯ ПРОСТАЯ ЛОГИКА АВТОВОСПРОИЗВЕДЕНИЯ
-            const handleTrackEnd = (endedTrackId) => {
-                const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
-                if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
-                    // Автоматически запускаем следующий трек
-                    const nextTrackId = playlist[currentIndex + 1].id;
-                    setTimeout(() => {
-                        handlePlay(nextTrackId);
-                    }, 100);
-                }
-            };
+            // ИСПРАВЛЕННЫЙ обработчик автоперехода на следующий трек
+            useEffect(() => {
+                const handleTrackEnded = (event) => {
+                    const endedTrackId = event.detail.endedTrackId;
+                    const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
+                    
+                    console.log('Автопереход: текущий индекс', currentIndex, 'всего треков:', playlist.length);
+                    
+                    if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+                        const nextTrack = playlist[currentIndex + 1];
+                        console.log('Запускаем следующий трек:', nextTrack.name);
+                        
+                        // Сначала сбрасываем состояние
+                        setCurrentTrackId(null);
+                        
+                        // Затем через небольшую задержку запускаем следующий трек
+                        setTimeout(() => {
+                            handlePlay(nextTrack.id);
+                        }, 100);
+                    } else {
+                        console.log('Это последний трек в плейлисте');
+                        setCurrentTrackId(null);
+                    }
+                };
+
+                window.addEventListener('trackEnded', handleTrackEnded);
+                return () => window.removeEventListener('trackEnded', handleTrackEnded);
+            }, [playlist]);
 
             return (
                 React.createElement('div', { className: 'App' },
@@ -320,8 +543,7 @@
                                     track: track,
                                     isPlaying: currentTrackId === track.id,
                                     onPlay: handlePlay,
-                                    onStop: handleStop,
-                                    onEnded: handleTrackEnd
+                                    onStop: handleStop
                                 })
                             )
                         )
@@ -334,7 +556,6 @@
         ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 
-    <!-- ... остальная часть вашего HTML (service worker и т.д.) ... -->
     <script>
         // Регистрация сервис-воркера
         if ('serviceWorker' in navigator) {
