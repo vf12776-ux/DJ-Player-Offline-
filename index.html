@@ -315,20 +315,17 @@
  const updateTime = () => setCurrentTime(audio.currentTime);
  const updateDuration = () => setDuration(audio.duration);
  const handleEnd = () => {
+    onStop(); // ← ЭТА СТРОКА ВАЖНА!
     setCurrentTime(0);
-    // Вызываем колбэк окончания трека
-    if (onEnded) {
-        onEnded(track.id);
-    } 
- // Автопереход на следующий трек
- setTimeout(() => {
- const event = new CustomEvent('trackEnded', { 
- detail: { endedTrackId: track.id }
- });
- window.dispatchEvent(event);
- }, 100);
- };
-
+    
+    // Автопереход на следующий трек
+    setTimeout(() => {
+        if (onEnded) {
+            onEnded(track.id);
+        }
+    }, 100);
+};
+  
  audio.addEventListener('timeupdate', updateTime);
  audio.addEventListener('loadedmetadata', updateDuration);
  audio.addEventListener('ended', handleEnd);
