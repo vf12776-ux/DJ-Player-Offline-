@@ -1,67 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-let currentAudio = null;
-
-const AudioPlayer = ({ track, onTrackEnd, isAutoPlay = false }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
+const AudioPlayerFixed = ({ track, isPlaying, onPlay, onPause, onEnded }) => {
     const audioRef = useRef(null);
+
+    // Синхронизация состояния воспроизведения
+    useEffect(() => {
+        if (isPlaying) {
+            audioRef.current.play();
+        } else {
+            audioRef.current.pause();
+        }
+    }, [isPlaying]);
 
     // Обработчик окончания трека
     useEffect(() => {
         const audio = audioRef.current;
-        
         const handleEnded = () => {
-            setIsPlaying(false);
-            if (currentAudio === audio) {
-                currentAudio = null;
-            }
-            // Вызываем callback для переключения на следующий трек
-            if (onTrackEnd) {
-                onTrackEnd();
-            }
+            if (onEnded) onEnded();
         };
 
-        if (audio) {
-            audio.addEventListener('ended', handleEnded);
-        }
-
-        // Автовоспроизведение при монтировании, если включено
-        if (isAutoPlay && audio) {
-            audio.play()
-                .then(() => {
-                    setIsPlaying(true);
-                    currentAudio = audio;
-                })
-                .catch(error => {
-                    console.log('Автовоспроизведение заблокировано:', error);
-                });
-        }
-
+        audio.addEventListener('ended', handleEnded);
+        
         return () => {
-            if (audio) {
-                audio.removeEventListener('ended', handleEnded);
-            }
+            audio.removeEventListener('ended', handleEnded);
         };
-    }, [onTrackEnd, isAutoPlay]);
+    }, [onEnded]);
 
     const togglePlay = () => {
         if (isPlaying) {
-            audioRef.current.pause();
-            setIsPlaying(false);
-            if (currentAudio === audioRef.current) {
-                currentAudio = null;
-            }
+            if (onPause) onPause();
         } else {
-            if (currentAudio && currentAudio !== audioRef.current) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-            }
-            
-            audioRef.current.play()
-                .then(() => {
-                    setIsPlaying(true);
-                    currentAudio = audioRef.current;
-                });
+            if (onPlay) onPlay();
         }
     };
 
@@ -80,12 +49,10 @@ const AudioPlayer = ({ track, onTrackEnd, isAutoPlay = false }) => {
             }}>
                 {isPlaying ? '⏸️ STOP' : '▶️ PLAY'}
             </button>
-            <div>
-                <strong>{track.name} [V3]</strong>
-                {isPlaying && <span style={{color: 'red', fontWeight: 'bold'}}> - PLAYING</span>}
-            </div>
+            <span><strong>{track.name}</strong></span>
+            {isPlaying && <span style={{color: 'red', fontWeight: 'bold'}}> - СЕЙЧАС ИГРАЕТ</span>}
         </div>
     );
 };
 
-export default AudioPlayer;
+export default AudioPlayerFixed;
