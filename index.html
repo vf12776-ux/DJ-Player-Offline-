@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -115,11 +116,13 @@
             border-radius: 10px;
             padding: 15px;
             margin: 10px 0;
+            transition: all 0.3s ease;
         }
 
         .audio-player.playing {
             border: 2px solid #1db954;
             background: rgba(29, 185, 84, 0.1);
+            transform: scale(1.02);
         }
 
         .player-controls {
@@ -139,10 +142,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .play-button:hover {
+            background: #1ed760;
+            transform: scale(1.1);
         }
 
         .play-button.playing {
-            background: #1db954;
+            background: #ff4d4d;
+        }
+
+        .play-button.playing:hover {
+            background: #ff6666;
         }
 
         .progress-container {
@@ -218,6 +231,14 @@
             border-radius: 5px;
             margin: 10px 0;
             font-size: 14px;
+        }
+
+        .player-status {
+            background: #282828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #1db954;
         }
     </style>
 </head>
@@ -303,30 +324,36 @@
             );
         }
 
-        // Компонент AudioPlayer с исправленным автовоспроизведением
-        function AudioPlayer({ track, isPlaying, onPlay, onStop }) {
+        // Компонент AudioPlayer
+        function AudioPlayer({ track, isPlaying, onPlay, onStop, onEnded }) {
             const [currentTime, setCurrentTime] = useState(0);
             const [duration, setDuration] = useState(0);
             const audioRef = useRef(null);
 
+            // Синхронизация воспроизведения
+            useEffect(() => {
+                if (isPlaying) {
+                    audioRef.current.play().catch(error => {
+                        console.error('Ошибка воспроизведения:', error);
+                        onStop();
+                    });
+                } else {
+                    audioRef.current.pause();
+                }
+            }, [isPlaying]);
+
+            // Обработчики событий аудио
             useEffect(() => {
                 const audio = audioRef.current;
                 
                 const updateTime = () => setCurrentTime(audio.currentTime);
                 const updateDuration = () => setDuration(audio.duration);
-                
-                // Обработчик окончания трека - КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
                 const handleEnd = () => {
                     console.log('Трек закончился:', track.name);
                     setCurrentTime(0);
-                    
-                    // Автопереход на следующий трек
-                    setTimeout(() => {
-                        const event = new CustomEvent('trackEnded', { 
-                            detail: { endedTrackId: track.id }
-                        });
-                        window.dispatchEvent(event);
-                    }, 100);
+                    if (onEnded) {
+                        onEnded(track.id);
+                    }
                 };
 
                 audio.addEventListener('timeupdate', updateTime);
@@ -338,22 +365,13 @@
                     audio.removeEventListener('loadedmetadata', updateDuration);
                     audio.removeEventListener('ended', handleEnd);
                 };
-            }, []);
+            }, [onEnded, track.id]);
 
             const togglePlay = () => {
                 if (isPlaying) {
-                    audioRef.current.pause();
                     onStop();
                 } else {
                     onPlay(track.id);
-                    audioRef.current.play()
-                        .then(() => {
-                            // Успешное воспроизведение
-                        })
-                        .catch(error => {
-                            console.error('Error playing audio:', error);
-                            onStop();
-                        });
                 }
             };
 
@@ -383,7 +401,6 @@
                         React.createElement('button', { 
                             className: `play-button ${isPlaying ? 'playing' : ''}`, 
                             onClick: togglePlay
-                            'data-track': track.id  
                         }, isPlaying ? '⏸️' : '▶️'),
                         React.createElement('div', { className: 'progress-container' },
                             React.createElement('span', { className: 'time-current' }, formatTime(currentTime)),
@@ -399,7 +416,7 @@
                         ),
                         React.createElement('div', { className: 'track-info' },
                             React.createElement('strong', null, track.name),
-                            React.createElement('span', null, track.artist),
+                            React.createElement('span', null, track.artist || 'Неизвестный исполнитель'),
                             isPlaying && React.createElement('span', { className: 'now-playing' }, '▶️ Играет')
                         )
                     )
@@ -407,7 +424,7 @@
             );
         }
 
-        // Главный компонент App с исправленным автовоспроизведением
+        // Главный компонент App
         function App() {
             const [localFiles, setLocalFiles] = useState([]);
             const [playlist, setPlaylist] = useState([]);
@@ -477,80 +494,62 @@
             };
 
             const handlePlay = (trackId) => {
-    console.log('Запускаем трек:', trackId);
-    
-    // Останавливаем все аудио
-    document.querySelectorAll('audio').forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0;
-    });
-    
-    // Устанавливаем новый трек
-    setCurrentTrackId(trackId);
-    
-    // Даем React время обновить состояние, затем запускаем воспроизведение
-    setTimeout(() => {
-        const audioElements = document.querySelectorAll('audio');
-        audioElements.forEach(audio => {
-            if (audio.src.includes(playlist.find(t => t.id === trackId)?.url)) {
-                console.log('Найден аудио элемент для воспроизведения');
-                audio.play()
-                    .then(() => {
-                        console.log('Трек успешно запущен:', trackId);
-                    })
-                    .catch(error => {
-                        console.error('Ошибка воспроизведения:', error);
-                        // Если автовоспроизведение заблокировано, пробуем еще раз по клику
-                        const playButton = document.querySelector(`[data-track="${trackId}"]`);
-                        if (playButton) {
-                            playButton.onclick = () => audio.play();
-                        }
-                    });
-            }
-        });
-    }, 100);
-};
+                // Останавливаем все аудио
+                document.querySelectorAll('audio').forEach(audio => {
+                    audio.pause();
+                });
+                setCurrentTrackId(trackId);
+            };
 
             const handleStop = () => {
                 setCurrentTrackId(null);
             };
 
-            // ИСПРАВЛЕННЫЙ обработчик автоперехода на следующий трек
-            useEffect(() => {
-                const handleTrackEnded = (event) => {
-                    const endedTrackId = event.detail.endedTrackId;
-                    const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
+            // Обработчик окончания трека - ПРОСТОЙ И РАБОЧИЙ
+            const handleTrackEnd = (endedTrackId) => {
+                console.log('Обработчик окончания трека:', endedTrackId);
+                const currentIndex = playlist.findIndex(t => t.id === endedTrackId);
+                
+                if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+                    const nextTrackId = playlist[currentIndex + 1].id;
+                    console.log('Автопереход на следующий трек:', nextTrackId);
                     
-                    console.log('Автопереход: текущий индекс', currentIndex, 'всего треков:', playlist.length);
-                    
-                    if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
-                        const nextTrack = playlist[currentIndex + 1];
-                        console.log('Запускаем следующий трек:', nextTrack.name);
-                        
-                        // Сначала сбрасываем состояние
-                        setCurrentTrackId(null);
-                        
-                        // Затем через небольшую задержку запускаем следующий трек
-                        setTimeout(() => {
-                            handlePlay(nextTrack.id);
-                        }, 100);
-                    } else {
-                        console.log('Это последний трек в плейлисте');
-                        setCurrentTrackId(null);
-                    }
-                };
+                    // Сразу запускаем следующий трек
+                    handlePlay(nextTrackId);
+                } else {
+                    console.log('Конец плейлиста');
+                    setCurrentTrackId(null);
+                }
+            };
 
-                window.addEventListener('trackEnded', handleTrackEnded);
-                return () => window.removeEventListener('trackEnded', handleTrackEnded);
-            }, [playlist]);
+            // Получение текущего трека
+            const currentTrack = playlist.find(t => t.id === currentTrackId) || {};
 
             return (
                 React.createElement('div', { className: 'App' },
                     React.createElement('header', { className: 'App-header' },
-                        React.createElement('h1', null, 'DJ Плеер'),
+                        React.createElement('h1', null, '🎵 DJ Плеер'),
+                        
+                        // Статус плеера
+                        React.createElement('div', { className: 'player-status' },
+                            React.createElement('div', null, 
+                                React.createElement('strong', null, 'Сейчас играет: '),
+                                currentTrack.name || '—'
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('strong', null, 'Статус: '),
+                                currentTrackId ? '▶️ Воспроизведение' : '⏸️ Пауза'
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('strong', null, 'Треков в плейлисте: '),
+                                playlist.length
+                            )
+                        ),
+                        
                         isIOS && React.createElement('div', { className: 'ios-warning' }, 
                             'На iOS автопереход может не работать из-за ограничений браузера'
                         ),
+                        
                         React.createElement(FileUpload, { onFilesSelect: handleFilesSelect }),
                         
                         localFiles.length > 0 && React.createElement('div', { className: 'local-files-list' },
@@ -570,7 +569,8 @@
                                     track: track,
                                     isPlaying: currentTrackId === track.id,
                                     onPlay: handlePlay,
-                                    onStop: handleStop
+                                    onStop: handleStop,
+                                    onEnded: handleTrackEnd
                                 })
                             )
                         )
