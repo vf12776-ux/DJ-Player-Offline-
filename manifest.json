@@ -1,8 +1,8 @@
 {
   "name": "DJ Player Offline", 
   "short_name": "DJ Player",
-  "start_url": "/DJ-Player-Offline-/index.html",
-  "scope": "/DJ-Player-Offline-/",
+  "start_url": ".",
+  "scope": ".",
   "display": "fullscreen",
   "background_color": "#000000",
   "theme_color": "#000000",
